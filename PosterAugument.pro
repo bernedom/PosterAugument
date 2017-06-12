@@ -28,3 +28,7 @@ INCLUDEPATH += "$$PWD/Dependencies/include/"
 LIBS += -L$$PWD/Dependencies/lib \
     -lopencv_world320d \
 
+dlls_to_move.path = $DESTDIR
+dlls_to_move.file += $$PWD/Dependencies/bin/*.dll
+
+INSTALLS += dlls_to_move
