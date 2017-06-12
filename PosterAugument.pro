@@ -1,5 +1,6 @@
-QT += core
-QT -= gui
+QT += core gui
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 
 CONFIG += c++11
 
@@ -25,4 +26,5 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += "$$PWD/Dependencies/include/"
 
 LIBS += -L$$PWD/Dependencies/lib \
-    -lopencv_world320
+    -lopencv_world320d \
+
