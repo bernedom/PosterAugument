@@ -22,8 +22,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += $$PWD/Dependencies/include/
+INCLUDEPATH += "$$PWD/Dependencies/include/"
 
-LIBS += -L$$PWD/Dependencies/opencv\bin \
-    -lopencv_ffmpeg320_64.dll \
-    -lopencv_world320.dll
+LIBS += -L$$PWD/Dependencies/lib \
+    -lopencv_world320
