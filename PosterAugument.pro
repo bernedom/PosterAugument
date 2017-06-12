@@ -24,7 +24,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += "$$PWD/Dependencies/include/"
 
 LIBS += -L$$PWD/Dependencies/lib \
-    -lopencv_world320d \
+    -lopencv_core320d \
+    -lopencv_xfeatures2d320d \
+    -lopencv_calib3d320d \
+    -lopencv_video320d \
+    -lopencv_highgui320d \
+    -lopencv_videoio320d \
+    -lopencv_imgcodecs320d
+
+
 
 dlls_to_move.path = $DESTDIR
 dlls_to_move.file += $$PWD/Dependencies/bin/*.dll
