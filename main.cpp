@@ -3,13 +3,26 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-int main(int argc, char *argv[])
-{
-    QCoreApplication a(argc, argv);
+#include <iostream>
 
-    cv::Mat image = cv::imread("C:\\Code\\PosterAugument\\Assets\\JollyRoger.jpg");
-    cv::namedWindow("MyView");
-    cv::imshow("MyView", image);
+int main(int, char **) {
 
-    return a.exec();
+  cv::VideoCapture stream(0);
+
+  if (!stream.isOpened()) {
+    std::cerr << "Could not open camera\n";
+    return -1;
+  }
+
+  while (true) {
+    cv::Mat frame;
+    stream.read(frame);
+
+    cv::imshow("Cam output", frame);
+    auto killer_key = cv::waitKey(30);
+    if (killer_key >= 0 && killer_key < 255) {
+      std::cout << "Killer key " << killer_key << std::endl;
+      break;
+    }
+  }
 }
