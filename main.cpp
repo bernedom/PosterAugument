@@ -2,6 +2,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp >
 
 #include <algorithm>
@@ -88,10 +89,25 @@ int main(int, char **) {
     cv::Mat homography =
         cv::findHomography(source_coords, videoframe_coords, CV_RANSAC);
     std::vector<cv::Point2f> videoframe_corners(4);
+    if (homography.empty()) {
+      continue; // skip, no match found
+    }
     cv::perspectiveTransform(source_corners, videoframe_corners, homography);
 
     // debug-drawing of keypoints
-    cv::drawKeypoints(videoframe, key_points_videoframe, debug_img_videoframe);
+    // cv::drawKeypoints(videoframe, key_points_videoframe,
+    // debug_img_videoframe);
+
+    // draw matching box
+    cv::line(debug_img_videoframe, videoframe_corners[0], videoframe_corners[1],
+             cv::Scalar(255, 0, 0), 4);
+    cv::line(debug_img_videoframe, videoframe_corners[1], videoframe_corners[2],
+             cv::Scalar(0, 255, 0), 4);
+    cv::line(debug_img_videoframe, videoframe_corners[2], videoframe_corners[3],
+             cv::Scalar(255, 255, 0), 4);
+    cv::line(debug_img_videoframe, videoframe_corners[3], videoframe_corners[0],
+             cv::Scalar(0, 0, 255), 4);
+
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
 
     // wait for 10ms for a keypress and exit if any detected

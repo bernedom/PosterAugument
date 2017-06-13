@@ -32,7 +32,8 @@ LIBS += -L$$PWD/Dependencies/lib \
     -lopencv_highgui320d \
     -lopencv_videoio320d \
     -lopencv_imgcodecs320d \
-    -lopencv_flann320d
+    -lopencv_flann320d \
+    -lopencv_imgproc320d
 
 
 
