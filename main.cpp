@@ -27,20 +27,27 @@ void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
 
   cv::Mat result(height, source_image.raw_data.cols + video_frame.raw_data.cols,
                  source_image.raw_data.type());
-  auto &left_roi = result(
+  auto left_roi = result(
       cv::Rect(0, 0, source_image.raw_data.cols, source_image.raw_data.rows));
-  auto &right_roi =
+  auto right_roi =
       result(cv::Rect(source_image.raw_data.cols, 0, video_frame.raw_data.cols,
                       video_frame.raw_data.rows));
 
   source_image.raw_data.copyTo(left_roi);
   video_frame.raw_data.copyTo(right_roi);
 
-  cv::putText(result, msg, cv::Point(100, 100),
-              cv::HersheyFonts::FONT_HERSHEY_SIMPLEX, 1.0,
+  cv::putText(result, msg, cv::Point(50, result.rows - 50),
+              cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1.0,
               cv::Scalar(0, 255, 255));
 
   cv::imshow("Cam output", result);
+  std::cout << "FAILED: " << msg << std::endl;
+
+  // for a keypress and exit if any detected
+  auto killer_key = cv::waitKey(1);
+  if (killer_key >= 0 && killer_key < 255) {
+    exit(0);
+  }
 }
 
 int main(int, char **) {
