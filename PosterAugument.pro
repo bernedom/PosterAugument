@@ -8,7 +8,8 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    featurematcher.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -63,5 +64,6 @@ LIBS += -L$${OPENCV_LIB_PATH}/release \
 }
 
 HEADERS += \
-    surf_image.h
+    surf_image.h \
+    featurematcher.h
 

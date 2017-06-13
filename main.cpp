@@ -5,6 +5,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
 
+#include "featurematcher.h"
 #include "surf_image.h"
 
 #include <algorithm>
@@ -18,6 +19,8 @@ void compute_surf(SURF_Image &image,
   detector->detect(image.raw_data, image.keypoints);
   detector->compute(image.raw_data, image.keypoints, image.descriptors);
 }
+
+bool waitForKey() {}
 
 void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
                 const char *msg) {
@@ -75,6 +78,7 @@ int main(int, char **) {
   compute_surf(source_image, detector);
 
   SURF_Image video_frame;
+  FeatureMatcher matcher;
 
   cv::Mat debug_img_videoframe;
 
@@ -93,37 +97,7 @@ int main(int, char **) {
       continue;
     }
 
-    // find matches between the keypoints
-    cv::FlannBasedMatcher matcher;
-    std::vector<cv::DMatch> matches;
-    matcher.match(source_image.descriptors, video_frame.descriptors, matches);
-
-    // get the min & max distance (max is not
-    const auto cmp_func = [](const cv::DMatch &lhs, const cv::DMatch &rhs) {
-      return lhs.distance < rhs.distance;
-    };
-    // this will frequently yield 0 which is a good indicator for matching
-    // points
-    const auto min_distance =
-        std::min_element(matches.begin(), matches.end(), cmp_func);
-
-    source_image.coords.clear();
-    video_frame.coords.clear();
-
-    // this culling using a multiplier is to better find fuzzy matches (having
-    // min_dist > 0)
-    const double max_distance_multiplier = 3.0;
-    std::vector<cv::DMatch> culled_matches;
-    for (const auto &m : matches) {
-      if (m.distance < min_distance->distance * max_distance_multiplier) {
-        culled_matches.push_back(m);
-        source_image.coords.push_back(source_image.keypoints[m.queryIdx].pt);
-        video_frame.coords.push_back(video_frame.keypoints[m.trainIdx].pt);
-      }
-    }
-
-    const size_t matching_threshold = 5;
-    if (culled_matches.size() < matching_threshold) {
+    if (!matcher.computeMatches(source_image, video_frame)) {
       draw_plain(source_image, video_frame, "Not enough matching features");
       continue;
     }
@@ -157,11 +131,11 @@ int main(int, char **) {
     // debug-drawing of keypoints
     // cv::drawKeypoints(videoframe, key_points_videoframe,
     // debug_img_videoframe);
-    cv::drawMatches(source_image.raw_data, source_image.keypoints,
-                    video_frame.raw_data, video_frame.keypoints, culled_matches,
-                    debug_img_videoframe, cv::Scalar::all(-1),
-                    cv::Scalar::all(-1), std::vector<char>(),
-                    cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    cv::drawMatches(
+        source_image.raw_data, source_image.keypoints, video_frame.raw_data,
+        video_frame.keypoints, matcher.matches(), debug_img_videoframe,
+        cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
+        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
     // drawMatches puts the source_image on the left side of the output image
     // so we need to shift the matching box to the right by source_image.width
