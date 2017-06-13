@@ -36,16 +36,12 @@ int main(int, char **) {
   detector->detect(source_image, key_points_source);
   detector->compute(source_image, key_points_source, descriptors_source);
 
-  std::cout << "Detected " << key_points_source.size()
-            << " key points for source\n";
-
   cv::Mat debug_img_source;
   cv::drawKeypoints(source_image, key_points_source, debug_img_source);
   cv::imshow("source", debug_img_source); // debug drawing of keypoints
 
   std::vector<cv::KeyPoint> key_points_videoframe;
   cv::Mat debug_img_videoframe;
-  stream.read(debug_img_videoframe); // read one frame to reserve image size
 
   while (true) {
     key_points_videoframe.clear();
@@ -97,7 +93,17 @@ int main(int, char **) {
     // debug-drawing of keypoints
     // cv::drawKeypoints(videoframe, key_points_videoframe,
     // debug_img_videoframe);
+    cv::drawMatches(source_image, key_points_source, videoframe,
+                    key_points_videoframe, culled_matches, debug_img_videoframe,
+                    cv::Scalar::all(-1), cv::Scalar::all(-1),
+                    std::vector<char>(),
+                    cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
+    // drawMatches puts the source_image on the left side of the output image
+    // so we need to shift the matching box to the right by source_image.width
+    for (auto &c : videoframe_corners) {
+      c += cv::Point2f((float)source_image.cols, 0);
+    }
     // draw matching box
     cv::line(debug_img_videoframe, videoframe_corners[0], videoframe_corners[1],
              cv::Scalar(255, 0, 0), 4);
@@ -110,8 +116,8 @@ int main(int, char **) {
 
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
 
-    // wait for 10ms for a keypress and exit if any detected
-    auto killer_key = cv::waitKey(10);
+    // for a keypress and exit if any detected
+    auto killer_key = cv::waitKey(1);
     if (killer_key >= 0 && killer_key < 255) {
       break;
     }
