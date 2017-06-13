@@ -84,6 +84,8 @@ int main(int, char **) {
 
     compute_surf(video_frame, detector);
 
+    // this happens if a featureless frame is recorded, i.e. from overexposure
+    // or a blocked camera
     if (video_frame.descriptors.cols == 0 ||
         video_frame.descriptors.rows == 0) {
       draw_plain(source_image, video_frame,
@@ -120,11 +122,15 @@ int main(int, char **) {
       }
     }
 
-    std::cout << culled_matches.size() << std::endl;
+    const size_t matching_threshold = 5;
+    if (culled_matches.size() < matching_threshold) {
+      draw_plain(source_image, video_frame, "Not enough matching features");
+      continue;
+    }
 
     // creating a set of homogenous transforms between points to do pose
-    // estimation, limiting the number of RANSAC iterations so it performs a bit
-    // faster
+    // estimation, limiting the number of RANSAC iterations so it performs a
+    // bit faster
     cv::Mat homography =
         cv::findHomography(source_image.coords, video_frame.coords, CV_RANSAC,
                            3, cv::noArray(), 1000);
