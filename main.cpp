@@ -1,3 +1,4 @@
+#include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -17,6 +18,12 @@ int main(int, char **) {
 
   const auto source_image =
       cv::imread("C:\\Code\\PosterAugument\\Assets\\JollyRoger.jpg");
+
+  // cannot use std::array despite fixed size because opencv doesn't use it yet
+  const std::vector<cv::Point2f> source_corners{
+      cv::Point2f(0, 0), cv::Point2f((float)source_image.cols, 0),
+      cv::Point2f((float)source_image.cols, (float)source_image.rows),
+      cv::Point2f(0, (float)source_image.rows)};
 
   const auto min_hessian = 400;
   cv::Ptr<cv::xfeatures2d::SURF> detector =
@@ -64,22 +71,31 @@ int main(int, char **) {
     const auto min_distance =
         std::min_element(matches.begin(), matches.end(), cmp_func);
 
+    std::vector<cv::Point2f> videoframe_coords;
+    std::vector<cv::Point2f> source_coords;
     // this culling using a multiplier is to better find fuzzy matches (having
-    // min_dist < 0)
+    // min_dist > 0)
     const double max_distance_multiplier = 3.0;
     std::vector<cv::DMatch> culled_matches;
     for (const auto &m : matches) {
       if (m.distance < min_distance->distance * max_distance_multiplier) {
         culled_matches.push_back(m);
+        source_coords.push_back(key_points_source[m.queryIdx].pt);
+        videoframe_coords.push_back(key_points_videoframe[m.trainIdx].pt);
       }
     }
+
+    cv::Mat homography =
+        cv::findHomography(source_coords, videoframe_coords, CV_RANSAC);
+    std::vector<cv::Point2f> videoframe_corners(4);
+    cv::perspectiveTransform(source_corners, videoframe_corners, homography);
 
     // debug-drawing of keypoints
     cv::drawKeypoints(videoframe, key_points_videoframe, debug_img_videoframe);
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
 
-    // wait for 30ms for a keypress and exit if any detected
-    auto killer_key = cv::waitKey(30);
+    // wait for 10ms for a keypress and exit if any detected
+    auto killer_key = cv::waitKey(10);
     if (killer_key >= 0 && killer_key < 255) {
       break;
     }
