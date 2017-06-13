@@ -54,6 +54,12 @@ int main(int, char **) {
     detector->compute(videoframe, key_points_videoframe,
                       descriptors_videoframe);
 
+    if (descriptors_videoframe.cols == 0 || descriptors_videoframe.rows == 0) {
+      std::cout << "Not enough features to perform matching, skipping frame\n";
+      continue;
+    }
+    std::cout << descriptors_videoframe.size() << std::endl;
+    ;
     // find matches between the keypoints
     cv::FlannBasedMatcher matcher;
     std::vector<cv::DMatch> matches;
@@ -86,6 +92,8 @@ int main(int, char **) {
         cv::findHomography(source_coords, videoframe_coords, CV_RANSAC);
     std::vector<cv::Point2f> videoframe_corners(4);
     if (homography.empty()) {
+      std::cout << "skipping frame, no match found\n";
+
       continue; // skip, no match found
     }
     cv::perspectiveTransform(source_corners, videoframe_corners, homography);
