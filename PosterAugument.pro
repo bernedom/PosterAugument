@@ -62,3 +62,6 @@ LIBS += -L$${OPENCV_LIB_PATH}/release \
 
 }
 
+HEADERS += \
+    surf_image.h
+
