@@ -86,10 +86,13 @@ int main(int, char **) {
       }
     }
 
+    std::cout << culled_matches.size() << std::endl;
+
     // creating a set of homogenous transforms between points to do pose
-    // estimation
-    cv::Mat homography =
-        cv::findHomography(source_coords, videoframe_coords, CV_RANSAC);
+    // estimation, limiting the number of RANSAC iterations so it performs a bit
+    // faster
+    cv::Mat homography = cv::findHomography(source_coords, videoframe_coords,
+                                            CV_RANSAC, 3, cv::noArray(), 1000);
     std::vector<cv::Point2f> videoframe_corners(4);
     // this might fail for no aparent reason because RANSAC might not find a
     // consensus given the number of iterations specified. This is usually the
@@ -100,6 +103,12 @@ int main(int, char **) {
     }
 
     cv::perspectiveTransform(source_corners, videoframe_corners, homography);
+
+    // incredible fast but simple discarding of bad posing
+    if (!cv::isContourConvex(videoframe_corners)) {
+      std::cout << "Contour not convex, matching source impossible\n";
+      continue;
+    }
 
     // debug-drawing of keypoints
     // cv::drawKeypoints(videoframe, key_points_videoframe,
