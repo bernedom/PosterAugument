@@ -22,6 +22,13 @@ int main(int, char **) {
 
   detector->detect(source_image, key_points_source);
 
+  std::cout << "Detected " << key_points_source.size()
+            << " key points for source\n";
+
+  cv::Mat keypoint_image;
+  cv::drawKeypoints(source_image, key_points_source, keypoint_image);
+  cv::imshow("source", keypoint_image);
+
   if (!stream.isOpened()) {
     std::cerr << "Could not open camera\n";
     return -1;
@@ -39,7 +46,6 @@ int main(int, char **) {
     // wait for 30ms for a keypress and exit if any detected
     auto killer_key = cv::waitKey(30);
     if (killer_key >= 0 && killer_key < 255) {
-      std::cout << "Killer key " << killer_key << std::endl;
       break;
     }
   }

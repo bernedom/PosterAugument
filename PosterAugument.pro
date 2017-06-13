@@ -26,6 +26,7 @@ INCLUDEPATH += "$$PWD/Dependencies/include/"
 LIBS += -L$$PWD/Dependencies/lib \
     -lopencv_core320d \
     -lopencv_xfeatures2d320d \
+    -lopencv_features2d320d \
     -lopencv_calib3d320d \
     -lopencv_video320d \
     -lopencv_highgui320d \
