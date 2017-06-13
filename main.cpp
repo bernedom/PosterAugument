@@ -30,36 +30,34 @@ int main(int, char **) {
   cv::Ptr<cv::xfeatures2d::SURF> detector =
       cv::xfeatures2d::SURF::create(min_hessian);
 
-  std::vector<cv::KeyPoint> key_points_source;
+  std::vector<cv::KeyPoint> keypoints_source;
   cv::Mat descriptors_source;
 
-  detector->detect(source_image, key_points_source);
-  detector->compute(source_image, key_points_source, descriptors_source);
+  detector->detect(source_image, keypoints_source);
+  detector->compute(source_image, keypoints_source, descriptors_source);
 
   cv::Mat debug_img_source;
-  cv::drawKeypoints(source_image, key_points_source, debug_img_source);
+  cv::drawKeypoints(source_image, keypoints_source, debug_img_source);
   cv::imshow("source", debug_img_source); // debug drawing of keypoints
 
-  std::vector<cv::KeyPoint> key_points_videoframe;
+  std::vector<cv::KeyPoint> keypoints_videoframe;
   cv::Mat debug_img_videoframe;
 
   while (true) {
-    key_points_videoframe.clear();
+    keypoints_videoframe.clear();
 
     cv::Mat videoframe;
     cv::Mat descriptors_videoframe;
 
     stream.read(videoframe); // slurp a single frame from the webcam
-    detector->detect(videoframe, key_points_videoframe);
-    detector->compute(videoframe, key_points_videoframe,
-                      descriptors_videoframe);
+    detector->detect(videoframe, keypoints_videoframe);
+    detector->compute(videoframe, keypoints_videoframe, descriptors_videoframe);
 
     if (descriptors_videoframe.cols == 0 || descriptors_videoframe.rows == 0) {
       std::cout << "Not enough features to perform matching, skipping frame\n";
       continue;
     }
-    std::cout << descriptors_videoframe.size() << std::endl;
-    ;
+
     // find matches between the keypoints
     cv::FlannBasedMatcher matcher;
     std::vector<cv::DMatch> matches;
@@ -83,26 +81,31 @@ int main(int, char **) {
     for (const auto &m : matches) {
       if (m.distance < min_distance->distance * max_distance_multiplier) {
         culled_matches.push_back(m);
-        source_coords.push_back(key_points_source[m.queryIdx].pt);
-        videoframe_coords.push_back(key_points_videoframe[m.trainIdx].pt);
+        source_coords.push_back(keypoints_source[m.queryIdx].pt);
+        videoframe_coords.push_back(keypoints_videoframe[m.trainIdx].pt);
       }
     }
 
+    // creating a set of homogenous transforms between points to do pose
+    // estimation
     cv::Mat homography =
         cv::findHomography(source_coords, videoframe_coords, CV_RANSAC);
     std::vector<cv::Point2f> videoframe_corners(4);
+    // this might fail for no aparent reason because RANSAC might not find a
+    // consensus given the number of iterations specified. This is usually the
+    // case in very noisy images
     if (homography.empty()) {
-      std::cout << "skipping frame, no match found\n";
-
-      continue; // skip, no match found
+      std::cout << "skipping frame, no homography found\n";
+      continue;
     }
+
     cv::perspectiveTransform(source_corners, videoframe_corners, homography);
 
     // debug-drawing of keypoints
     // cv::drawKeypoints(videoframe, key_points_videoframe,
     // debug_img_videoframe);
-    cv::drawMatches(source_image, key_points_source, videoframe,
-                    key_points_videoframe, culled_matches, debug_img_videoframe,
+    cv::drawMatches(source_image, keypoints_source, videoframe,
+                    keypoints_videoframe, culled_matches, debug_img_videoframe,
                     cv::Scalar::all(-1), cv::Scalar::all(-1),
                     std::vector<char>(),
                     cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
