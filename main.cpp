@@ -19,6 +19,30 @@ void compute_surf(SURF_Image &image,
   detector->compute(image.raw_data, image.keypoints, image.descriptors);
 }
 
+void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
+                const char *msg) {
+
+  const auto height =
+      std::max(source_image.raw_data.rows, video_frame.raw_data.rows);
+
+  cv::Mat result(height, source_image.raw_data.cols + video_frame.raw_data.cols,
+                 source_image.raw_data.type());
+  auto &left_roi = result(
+      cv::Rect(0, 0, source_image.raw_data.cols, source_image.raw_data.rows));
+  auto &right_roi =
+      result(cv::Rect(source_image.raw_data.cols, 0, video_frame.raw_data.cols,
+                      video_frame.raw_data.rows));
+
+  source_image.raw_data.copyTo(left_roi);
+  video_frame.raw_data.copyTo(right_roi);
+
+  cv::putText(result, msg, cv::Point(100, 100),
+              cv::HersheyFonts::FONT_HERSHEY_SIMPLEX, 1.0,
+              cv::Scalar(0, 255, 255));
+
+  cv::imshow("Cam output", result);
+}
+
 int main(int, char **) {
 
   cv::VideoCapture stream(0); // no const, because read() is not const
@@ -55,7 +79,8 @@ int main(int, char **) {
 
     if (video_frame.descriptors.cols == 0 ||
         video_frame.descriptors.rows == 0) {
-      std::cout << "Not enough features to perform matching, skipping frame\n";
+      draw_plain(source_image, video_frame,
+                 "Not enough features to perform matching, skipping frame");
       continue;
     }
 
@@ -101,7 +126,8 @@ int main(int, char **) {
     // consensus given the number of iterations specified. This is usually the
     // case in very noisy images
     if (homography.empty()) {
-      std::cout << "skipping frame, no homography found\n";
+      draw_plain(source_image, video_frame,
+                 "skipping frame, no homography found");
       continue;
     }
 
@@ -110,7 +136,8 @@ int main(int, char **) {
 
     // incredible fast but simple discarding of bad posing
     if (!cv::isContourConvex(video_frame.corners)) {
-      std::cout << "Contour not convex, matching source impossible\n";
+      draw_plain(source_image, video_frame,
+                 "Contour not convex, matching source impossible");
       continue;
     }
 
