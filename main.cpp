@@ -72,6 +72,29 @@ int main(int, char **) {
                                       (float)source_image.raw_data.rows),
                           cv::Point2f(0, (float)source_image.raw_data.rows)};
 
+  SURF_Image replacement_image;
+  replacement_image.raw_data =
+      cv::imread("C:\\Code\\PosterAugument\\Assets\\pirate_smiley.jpg");
+
+  if (replacement_image.raw_data.cols > source_image.raw_data.cols ||
+      replacement_image.raw_data.rows > source_image.raw_data.rows) {
+    std::cerr << "Replacement image must fit inside source image\n";
+    return -1;
+  }
+
+  const auto height_offset =
+      (source_image.raw_data.rows - replacement_image.raw_data.rows) / 2;
+  const auto width_offset =
+      (source_image.raw_data.cols - replacement_image.raw_data.cols) / 2;
+  replacement_image.corners = {
+      cv::Point2f(width_offset, height_offset),
+      cv::Point2f((float)replacement_image.raw_data.cols + width_offset,
+                  height_offset),
+      cv::Point2f((float)replacement_image.raw_data.cols + width_offset,
+                  (float)replacement_image.raw_data.rows + height_offset),
+      cv::Point2f(width_offset,
+                  (float)replacement_image.raw_data.rows + height_offset)};
+
   const auto min_hessian = 400;
   cv::Ptr<cv::xfeatures2d::SURF> detector =
       cv::xfeatures2d::SURF::create(min_hessian);
@@ -122,6 +145,11 @@ int main(int, char **) {
     cv::perspectiveTransform(source_image.corners, video_frame.corners,
                              homography);
 
+    cv::Mat distorted_image;
+    cv::warpPerspective(replacement_image.raw_data, distorted_image, homography,
+                        cv::Size(replacement_image.raw_data.cols,
+                                 replacement_image.raw_data.rows));
+
     // incredible fast but simple discarding of bad posing
     if (!cv::isContourConvex(video_frame.corners)) {
       draw_plain(source_image, video_frame,
@@ -152,6 +180,11 @@ int main(int, char **) {
              video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
     cv::line(debug_img_videoframe, video_frame.corners[3],
              video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
+
+    auto roi =
+        debug_img_videoframe(cv::Rect(0, 0, replacement_image.raw_data.cols,
+                                      replacement_image.raw_data.rows));
+    distorted_image.copyTo(roi);
 
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
   }
