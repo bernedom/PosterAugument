@@ -1,6 +1,6 @@
 QT -= core gui
 
-CONFIG += c++11
+CONFIG += c++14
 
 TARGET = PosterAugument
 CONFIG += console
@@ -23,7 +23,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 INCLUDEPATH += "$$PWD/Dependencies/include/"
 
-LIBS += -L$$PWD/Dependencies/lib \
+OPENCV_PATH = "C:/Code/opencv/opencv/build/"
+OPENCV_LIB_PATH = "$${OPENCV_PATH}/lib/"
+OPENCV_BIN_PATH = "$${OPENCV_PATH}/bin/"
+
+
+debug {
+    LIBS += -L$${OPENCV_LIB_PATH}/debug \
     -lopencv_core320d \
     -lopencv_xfeatures2d320d \
     -lopencv_features2d320d \
@@ -35,9 +41,24 @@ LIBS += -L$$PWD/Dependencies/lib \
     -lopencv_flann320d \
     -lopencv_imgproc320d
 
+    OPENCV_BIN_PATH += "Debug/"
 
+}
 
-dlls_to_move.path = $DESTDIR
-dlls_to_move.file += $$PWD/Dependencies/bin/*.dll
+release {
+LIBS += -L$${OPENCV_LIB_PATH}/release \
+    -lopencv_core320 \
+    -lopencv_xfeatures2d320 \
+    -lopencv_features2d320 \
+    -lopencv_calib3d320 \
+    -lopencv_video320 \
+    -lopencv_highgui320 \
+    -lopencv_videoio320 \
+    -lopencv_imgcodecs320 \
+    -lopencv_flann320 \
+    -lopencv_imgproc320
 
-INSTALLS += dlls_to_move
+    OPENCV_BIN_PATH += "Release/"
+
+}
+
