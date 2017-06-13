@@ -20,7 +20,14 @@ void compute_surf(SURF_Image &image,
   detector->compute(image.raw_data, image.keypoints, image.descriptors);
 }
 
-bool waitForKey() {}
+bool doContinue() {
+  // for a keypress and exit if any detected
+  const auto killer_key = cv::waitKey(1);
+  if (killer_key >= 0 && killer_key < 255) {
+    return false;
+  }
+  return true;
+}
 
 void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
                 const char *msg) {
@@ -45,12 +52,6 @@ void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
 
   cv::imshow("Cam output", result);
   std::cout << "FAILED: " << msg << std::endl;
-
-  // for a keypress and exit if any detected
-  auto killer_key = cv::waitKey(1);
-  if (killer_key >= 0 && killer_key < 255) {
-    exit(0);
-  }
 }
 
 int main(int, char **) {
@@ -82,7 +83,7 @@ int main(int, char **) {
 
   cv::Mat debug_img_videoframe;
 
-  while (true) {
+  while (doContinue()) {
 
     stream.read(video_frame.raw_data); // slurp a single frame from the webcam
 
@@ -153,11 +154,5 @@ int main(int, char **) {
              video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
 
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
-
-    // for a keypress and exit if any detected
-    auto killer_key = cv::waitKey(1);
-    if (killer_key >= 0 && killer_key < 255) {
-      break;
-    }
   }
 }
