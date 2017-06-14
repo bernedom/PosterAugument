@@ -28,63 +28,6 @@ bool Augumentor_CPU::init() {
   return true;
 }
 
-void Augumentor_CPU::render(SURF_Image &video_frame) {
-
-  cv::Mat result;
-  if (renderdebug()) {
-    // emulate matching rendeirng if error ms is not empty
-    if (_error_msg.empty()) {
-
-      const auto height =
-          std::max(_source_image.raw_data.rows, video_frame.raw_data.rows);
-
-      result = cv::Mat(height,
-                       _source_image.raw_data.cols + video_frame.raw_data.cols,
-                       _source_image.raw_data.type());
-      auto left_roi = result(cv::Rect(0, 0, _source_image.raw_data.cols,
-                                      _source_image.raw_data.rows));
-      auto right_roi = result(cv::Rect(_source_image.raw_data.cols, 0,
-                                       video_frame.raw_data.cols,
-                                       video_frame.raw_data.rows));
-
-      _source_image.raw_data.copyTo(left_roi);
-      video_frame.raw_data.copyTo(right_roi);
-
-      result.copyTo(video_frame.raw_data);
-    } else {
-
-      cv::drawMatches(
-          _source_image.raw_data, _source_image.keypoints, video_frame.raw_data,
-          video_frame.keypoints, _matcher.matches(), video_frame.raw_data,
-          cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
-          cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
-      // drawMatches puts the source_image on the left side of the output image
-      // so we need to shift the matching box to the right by source_image.width
-      for (auto &c : video_frame.corners) {
-        c += cv::Point2f((float)_source_image.raw_data.cols, 0);
-      }
-      // draw matching box
-      cv::line(video_frame.raw_data, video_frame.corners[0],
-               video_frame.corners[1], cv::Scalar(255, 0, 0), 4);
-      cv::line(video_frame.raw_data, video_frame.corners[1],
-               video_frame.corners[2], cv::Scalar(0, 255, 0), 4);
-      cv::line(video_frame.raw_data, video_frame.corners[2],
-               video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
-      cv::line(video_frame.raw_data, video_frame.corners[3],
-               video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
-    }
-  }
-
-  if (!_error_msg.empty()) {
-    cv::putText(video_frame.raw_data, _error_msg,
-                cv::Point(50, video_frame.raw_data.rows - 50),
-                cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1.0,
-                cv::Scalar(0, 255, 255));
-    std::cout << "FAILED: " << _error_msg << std::endl;
-  }
-}
-
 void Augumentor_CPU::compute(SURF_Image &video_frame) {
   _error_msg.clear();
   compute_surf(video_frame);
@@ -132,6 +75,65 @@ void Augumentor_CPU::compute_surf(SURF_Image &image) {
   image.coords.clear();
   _detector->detect(image.raw_data, image.keypoints);
   _detector->compute(image.raw_data, image.keypoints, image.descriptors);
+}
+
+void Augumentor_CPU::render(SURF_Image &video_frame) {
+
+  cv::Mat result;
+  if (renderdebug()) {
+    // emulate matching rendeirng if error ms is not empty
+    if (!_error_msg.empty()) {
+
+      const auto height =
+          std::max(_source_image.raw_data.rows, video_frame.raw_data.rows);
+
+      result = cv::Mat(height,
+                       _source_image.raw_data.cols + video_frame.raw_data.cols,
+                       _source_image.raw_data.type());
+      auto left_roi = result(cv::Rect(0, 0, _source_image.raw_data.cols,
+                                      _source_image.raw_data.rows));
+      auto right_roi = result(cv::Rect(_source_image.raw_data.cols, 0,
+                                       video_frame.raw_data.cols,
+                                       video_frame.raw_data.rows));
+
+      _source_image.raw_data.copyTo(left_roi);
+      video_frame.raw_data.copyTo(right_roi);
+
+      result.copyTo(video_frame.raw_data);
+    } else {
+
+      cv::Mat debug_image;
+      cv::drawMatches(_source_image.raw_data, _source_image.keypoints,
+                      video_frame.raw_data, video_frame.keypoints,
+                      _matcher.matches(), debug_image, cv::Scalar::all(-1),
+                      cv::Scalar::all(-1), std::vector<char>(),
+                      cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+      video_frame.raw_data = debug_image;
+      // drawMatches puts the source_image on the left side of the output image
+      // so we need to shift the matching box to the right by source_image.width
+      for (auto &c : video_frame.corners) {
+        c += cv::Point2f((float)_source_image.raw_data.cols, 0);
+      }
+      // draw matching box
+      cv::line(video_frame.raw_data, video_frame.corners[0],
+               video_frame.corners[1], cv::Scalar(255, 0, 0), 4);
+      cv::line(video_frame.raw_data, video_frame.corners[1],
+               video_frame.corners[2], cv::Scalar(0, 255, 0), 4);
+      cv::line(video_frame.raw_data, video_frame.corners[2],
+               video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
+      cv::line(video_frame.raw_data, video_frame.corners[3],
+               video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
+    }
+  }
+
+  if (!_error_msg.empty()) {
+    cv::putText(video_frame.raw_data, _error_msg,
+                cv::Point(50, video_frame.raw_data.rows - 50),
+                cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1.0,
+                cv::Scalar(0, 255, 255));
+    std::cout << "FAILED: " << _error_msg << std::endl;
+  }
 }
 
 void Augumentor_CPU::warp_replacement_image(SURF_Image &video_frame,

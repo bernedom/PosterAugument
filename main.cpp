@@ -13,9 +13,6 @@
 #include <iostream>
 #include <vector>
 
-static bool draw_debug = false;
-static bool rotate_replacement = false;
-
 bool input_handler(Augumentor &augumentor) {
   // for a keypress and exit if any detected
   const auto killer_key = cv::waitKey(1);
