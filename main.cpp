@@ -74,7 +74,8 @@ int main(int, char **) {
 
   SURF_Image replacement_image;
   replacement_image.raw_data = cv::imread(
-      "C:\\Code\\PosterAugument\\Assets\\pirate_smiley_transparent.png");
+      "C:\\Code\\PosterAugument\\Assets\\pirate_smiley_transparent.png",
+      cv::IMREAD_UNCHANGED); // reading this with transparency information
 
   if (replacement_image.raw_data.cols > source_image.raw_data.cols ||
       replacement_image.raw_data.rows > source_image.raw_data.rows) {
@@ -158,8 +159,25 @@ int main(int, char **) {
         replacement_image.raw_data, distorted_image, homography,
         cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
 
-    cv::addWeighted(video_frame.raw_data, 1.0, distorted_image, 1.0, 0,
-                    video_frame.raw_data);
+    // assert to harden against implementation changes, as the loop below relies
+    // on this
+    assert(video_frame.raw_data.size == distorted_image.size);
+
+    for (int c = 0; c < video_frame.raw_data.cols; ++c) {
+      for (int r = 0; r < video_frame.raw_data.rows; ++r) {
+
+        auto &video_px = video_frame.raw_data.at<cv::Vec3b>(r, c);
+        const auto &overlay_px = distorted_image.at<cv::Vec4b>(r, c);
+
+        // blend using alpha weight
+        video_px[0] =
+            video_px[0] * (255 - overlay_px[3]) + overlay_px[0] * overlay_px[3];
+        video_px[1] =
+            video_px[1] * (255 - overlay_px[3]) + overlay_px[1] * overlay_px[3];
+        video_px[2] =
+            video_px[2] * (255 - overlay_px[3]) + overlay_px[2] * overlay_px[3];
+      }
+    }
 
     cv::drawMatches(
         source_image.raw_data, source_image.keypoints, video_frame.raw_data,
