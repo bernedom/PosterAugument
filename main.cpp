@@ -13,6 +13,7 @@
 #include <vector>
 
 static bool draw_debug = false;
+static bool rotate_replacement = false;
 
 void compute_surf(SURF_Image &image,
                   const cv::Ptr<cv::xfeatures2d::SURF> &detector) {
@@ -31,6 +32,9 @@ bool doContinue() {
     draw_debug = !draw_debug;
     break;
   }
+  case 114:
+    rotate_replacement = !rotate_replacement;
+    break;
   case 255:
   case -1:
     result = true;
@@ -180,12 +184,14 @@ int main(int, char **) {
     cv::Point2f center(replacement_image.raw_data.cols / 2,
                        replacement_image.raw_data.rows / 2);
 
-    static int angle = 0;
-    const auto rot_mat = cv::getRotationMatrix2D(center, angle % 360, 0.6);
-    angle += 10;
-    cv::warpAffine(replacement_image.raw_data, distorted_image, rot_mat,
-                   cv::Size(replacement_image.raw_data.cols,
-                            replacement_image.raw_data.rows));
+    if (rotate_replacement) {
+      static int angle = 0;
+      const auto rot_mat = cv::getRotationMatrix2D(center, angle % 360, 0.6);
+      angle += 10;
+      cv::warpAffine(replacement_image.raw_data, distorted_image, rot_mat,
+                     cv::Size(replacement_image.raw_data.cols,
+                              replacement_image.raw_data.rows));
+    }
 
     cv::warpPerspective(
         distorted_image, distorted_image, homography,
