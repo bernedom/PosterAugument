@@ -24,11 +24,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += "$$PWD/Dependencies/include/"
 
 OPENCV_PATH = "C:/Code/opencv/opencv/build/"
 OPENCV_LIB_PATH = "$${OPENCV_PATH}/lib/"
 OPENCV_BIN_PATH = "$${OPENCV_PATH}/bin/"
+OPENCV_INCLUDE_PATH = "$${OPENCV_PATH}/include/"
+
+INCLUDEPATH += $${OPENCV_INCLUDE_PATH}
+
 
 
 debug {
