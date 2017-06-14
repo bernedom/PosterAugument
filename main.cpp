@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vector>
 
+static bool draw_debug = false;
+
 void compute_surf(SURF_Image &image,
                   const cv::Ptr<cv::xfeatures2d::SURF> &detector) {
   image.keypoints.clear();
@@ -23,34 +25,53 @@ void compute_surf(SURF_Image &image,
 bool doContinue() {
   // for a keypress and exit if any detected
   const auto killer_key = cv::waitKey(1);
-  if (killer_key >= 0 && killer_key < 255) {
-    return false;
+  bool result = true;
+  switch (killer_key) {
+  case 100: {
+    draw_debug = !draw_debug;
+    break;
   }
-  return true;
+  case 255:
+  case -1:
+    result = true;
+    break;
+  default:
+    result = false;
+  }
+
+  return result;
 }
 
 void draw_plain(const SURF_Image &source_image, const SURF_Image &video_frame,
                 const char *msg) {
 
-  const auto height =
-      std::max(source_image.raw_data.rows, video_frame.raw_data.rows);
+  cv::Mat result;
+  if (draw_debug) {
+    const auto height =
+        std::max(source_image.raw_data.rows, video_frame.raw_data.rows);
 
-  cv::Mat result(height, source_image.raw_data.cols + video_frame.raw_data.cols,
-                 source_image.raw_data.type());
-  auto left_roi = result(
-      cv::Rect(0, 0, source_image.raw_data.cols, source_image.raw_data.rows));
-  auto right_roi =
-      result(cv::Rect(source_image.raw_data.cols, 0, video_frame.raw_data.cols,
-                      video_frame.raw_data.rows));
+    result =
+        cv::Mat(height, source_image.raw_data.cols + video_frame.raw_data.cols,
+                source_image.raw_data.type());
+    auto left_roi = result(
+        cv::Rect(0, 0, source_image.raw_data.cols, source_image.raw_data.rows));
+    auto right_roi =
+        result(cv::Rect(source_image.raw_data.cols, 0,
+                        video_frame.raw_data.cols, video_frame.raw_data.rows));
 
-  source_image.raw_data.copyTo(left_roi);
-  video_frame.raw_data.copyTo(right_roi);
+    source_image.raw_data.copyTo(left_roi);
+    video_frame.raw_data.copyTo(right_roi);
+
+  } else {
+    result = video_frame.raw_data;
+  }
 
   cv::putText(result, msg, cv::Point(50, result.rows - 50),
               cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1.0,
               cv::Scalar(0, 255, 255));
 
   cv::imshow("Cam output", result);
+
   std::cout << "FAILED: " << msg << std::endl;
 }
 
@@ -132,7 +153,7 @@ int main(int, char **) {
     // bit faster
     cv::Mat homography =
         cv::findHomography(source_image.coords, video_frame.coords, CV_RANSAC,
-                           3, cv::noArray(), 1000);
+                           3, cv::noArray(), 500);
 
     // this might fail for no aparent reason because RANSAC might not find a
     // consensus given the number of iterations specified. This is usually the
@@ -169,35 +190,40 @@ int main(int, char **) {
         auto &video_px = video_frame.raw_data.at<cv::Vec3b>(r, c);
         const auto &overlay_px = distorted_image.at<cv::Vec4b>(r, c);
 
-        float alpha = overlay_px[3] / 255.0f;
+        const float alpha = overlay_px[3] / 255.0f;
         // blend using alpha weight
-        video_px[0] = video_px[0] * (1.0f - alpha) + overlay_px[0] * alpha;
-        video_px[1] = video_px[1] * (1.0f - alpha) + overlay_px[1] * alpha;
-        video_px[2] = video_px[2] * (1.0f - alpha) + overlay_px[2] * alpha;
+        for (int i = 0; i < 3; ++i) {
+          video_px[i] =
+              (uchar)(video_px[i] * (1.0f - alpha) + overlay_px[i] * alpha);
+        }
       }
     }
 
-    cv::drawMatches(
-        source_image.raw_data, source_image.keypoints, video_frame.raw_data,
-        video_frame.keypoints, matcher.matches(), debug_img_videoframe,
-        cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
-        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    if (draw_debug) {
+      cv::drawMatches(
+          source_image.raw_data, source_image.keypoints, video_frame.raw_data,
+          video_frame.keypoints, matcher.matches(), debug_img_videoframe,
+          cv::Scalar::all(-1), cv::Scalar::all(-1), std::vector<char>(),
+          cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
-    // drawMatches puts the source_image on the left side of the output image
-    // so we need to shift the matching box to the right by source_image.width
-    for (auto &c : video_frame.corners) {
-      c += cv::Point2f((float)source_image.raw_data.cols, 0);
+      // drawMatches puts the source_image on the left side of the output image
+      // so we need to shift the matching box to the right by source_image.width
+      for (auto &c : video_frame.corners) {
+        c += cv::Point2f((float)source_image.raw_data.cols, 0);
+      }
+      // draw matching box
+      cv::line(debug_img_videoframe, video_frame.corners[0],
+               video_frame.corners[1], cv::Scalar(255, 0, 0), 4);
+      cv::line(debug_img_videoframe, video_frame.corners[1],
+               video_frame.corners[2], cv::Scalar(0, 255, 0), 4);
+      cv::line(debug_img_videoframe, video_frame.corners[2],
+               video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
+      cv::line(debug_img_videoframe, video_frame.corners[3],
+               video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
+
+      cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
+    } else {
+      cv::imshow("Cam output", video_frame.raw_data);
     }
-    // draw matching box
-    cv::line(debug_img_videoframe, video_frame.corners[0],
-             video_frame.corners[1], cv::Scalar(255, 0, 0), 4);
-    cv::line(debug_img_videoframe, video_frame.corners[1],
-             video_frame.corners[2], cv::Scalar(0, 255, 0), 4);
-    cv::line(debug_img_videoframe, video_frame.corners[2],
-             video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
-    cv::line(debug_img_videoframe, video_frame.corners[3],
-             video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
-
-    cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
   }
 }
