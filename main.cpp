@@ -73,8 +73,8 @@ int main(int, char **) {
                           cv::Point2f(0, (float)source_image.raw_data.rows)};
 
   SURF_Image replacement_image;
-  replacement_image.raw_data =
-      cv::imread("C:\\Code\\PosterAugument\\Assets\\pirate_smiley.jpg");
+  replacement_image.raw_data = cv::imread(
+      "C:\\Code\\PosterAugument\\Assets\\pirate_smiley_transparent.png");
 
   if (replacement_image.raw_data.cols > source_image.raw_data.cols ||
       replacement_image.raw_data.rows > source_image.raw_data.rows) {
