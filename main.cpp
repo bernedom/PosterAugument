@@ -152,9 +152,15 @@ int main(int, char **) {
       continue;
     }
 
-    // debug-drawing of keypoints
-    // cv::drawKeypoints(videoframe, key_points_videoframe,
-    // debug_img_videoframe);
+    // distort replacement image according to homography
+    cv::Mat distorted_image;
+    cv::warpPerspective(
+        replacement_image.raw_data, distorted_image, homography,
+        cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
+
+    cv::addWeighted(video_frame.raw_data, 1.0, distorted_image, 1.0, 0,
+                    video_frame.raw_data);
+
     cv::drawMatches(
         source_image.raw_data, source_image.keypoints, video_frame.raw_data,
         video_frame.keypoints, matcher.matches(), debug_img_videoframe,
@@ -175,11 +181,6 @@ int main(int, char **) {
              video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
     cv::line(debug_img_videoframe, video_frame.corners[3],
              video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
-
-    cv::Mat distorted_image;
-    cv::warpPerspective(replacement_image.raw_data, distorted_image, homography,
-                        cv::Size(video_frame.cols, video_frame.rows));
-    cv::imshow("Distorted", distorted_image);
 
     //    auto roi =
     //        debug_img_videoframe(cv::Rect(0, 0,
