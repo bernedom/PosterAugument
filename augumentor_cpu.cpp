@@ -141,22 +141,26 @@ void Augumentor_CPU::warp_replacement_image(SURF_Image &video_frame,
   // distort replacement image according to homography
 
   cv::Mat distorted_image;
-  cv::Point2f center((float)_replacement_image.raw_data.cols / 2,
-                     (float)_replacement_image.raw_data.rows / 2);
 
   if (animate()) {
+    cv::Point2f center((float)_replacement_image.raw_data.cols / 2,
+                       (float)_replacement_image.raw_data.rows / 2);
+
     static int angle = 0;
     const auto rot_mat = cv::getRotationMatrix2D(center, angle % 360, 0.6);
     angle += 10;
     cv::warpAffine(_replacement_image.raw_data, distorted_image, rot_mat,
                    cv::Size(_replacement_image.raw_data.cols,
                             _replacement_image.raw_data.rows));
+    cv::warpPerspective(
+        distorted_image, distorted_image, homography,
+        cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
+  } else {
+
+    cv::warpPerspective(
+        _replacement_image.raw_data, distorted_image, homography,
+        cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
   }
-
-  cv::warpPerspective(
-      _replacement_image.raw_data, distorted_image, homography,
-      cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
-
   // assert to harden against implementation changes, as the loop below
   // relies on this
   assert(video_frame.raw_data.size == distorted_image.size);
