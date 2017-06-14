@@ -175,13 +175,24 @@ int main(int, char **) {
     }
 
     // distort replacement image according to homography
+
     cv::Mat distorted_image;
+    cv::Point2f center(replacement_image.raw_data.cols / 2,
+                       replacement_image.raw_data.rows / 2);
+
+    static int angle = 0;
+    const auto rot_mat = cv::getRotationMatrix2D(center, angle % 360, 0.6);
+    angle += 10;
+    cv::warpAffine(replacement_image.raw_data, distorted_image, rot_mat,
+                   cv::Size(replacement_image.raw_data.cols,
+                            replacement_image.raw_data.rows));
+
     cv::warpPerspective(
-        replacement_image.raw_data, distorted_image, homography,
+        distorted_image, distorted_image, homography,
         cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
 
-    // assert to harden against implementation changes, as the loop below relies
-    // on this
+    // assert to harden against implementation changes, as the loop below
+    // relies on this
     assert(video_frame.raw_data.size == distorted_image.size);
 
     for (int c = 0; c < video_frame.raw_data.cols; ++c) {
