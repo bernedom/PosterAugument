@@ -87,12 +87,12 @@ int main(int, char **) {
   const auto width_offset =
       (source_image.raw_data.cols - replacement_image.raw_data.cols) / 2;
   replacement_image.corners = {
-      cv::Point2f(width_offset, height_offset),
+      cv::Point2f((float)width_offset, (float)height_offset),
       cv::Point2f((float)replacement_image.raw_data.cols + width_offset,
-                  height_offset),
+                  (float)height_offset),
       cv::Point2f((float)replacement_image.raw_data.cols + width_offset,
                   (float)replacement_image.raw_data.rows + height_offset),
-      cv::Point2f(width_offset,
+      cv::Point2f((float)width_offset,
                   (float)replacement_image.raw_data.rows + height_offset)};
 
   const auto min_hessian = 400;
@@ -181,12 +181,6 @@ int main(int, char **) {
              video_frame.corners[3], cv::Scalar(255, 255, 0), 4);
     cv::line(debug_img_videoframe, video_frame.corners[3],
              video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
-
-    //    auto roi =
-    //        debug_img_videoframe(cv::Rect(0, 0,
-    //        replacement_image.raw_data.cols,
-    //                                      replacement_image.raw_data.rows));
-    //    distorted_image.copyTo(roi);
 
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
   }
