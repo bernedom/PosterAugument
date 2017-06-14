@@ -145,12 +145,7 @@ int main(int, char **) {
     cv::perspectiveTransform(source_image.corners, video_frame.corners,
                              homography);
 
-    cv::Mat distorted_image;
-    cv::warpPerspective(replacement_image.raw_data, distorted_image, homography,
-                        cv::Size(replacement_image.raw_data.cols,
-                                 replacement_image.raw_data.rows));
-
-    // incredible fast but simple discarding of bad posing
+    // incredible fast but simple discarding of bad posing :)
     if (!cv::isContourConvex(video_frame.corners)) {
       draw_plain(source_image, video_frame,
                  "Contour not convex, matching source impossible");
@@ -181,10 +176,16 @@ int main(int, char **) {
     cv::line(debug_img_videoframe, video_frame.corners[3],
              video_frame.corners[0], cv::Scalar(0, 0, 255), 4);
 
-    auto roi =
-        debug_img_videoframe(cv::Rect(0, 0, replacement_image.raw_data.cols,
-                                      replacement_image.raw_data.rows));
-    distorted_image.copyTo(roi);
+    cv::Mat distorted_image;
+    cv::warpPerspective(replacement_image.raw_data, distorted_image, homography,
+                        cv::Size(video_frame.cols, video_frame.rows));
+    cv::imshow("Distorted", distorted_image);
+
+    //    auto roi =
+    //        debug_img_videoframe(cv::Rect(0, 0,
+    //        replacement_image.raw_data.cols,
+    //                                      replacement_image.raw_data.rows));
+    //    distorted_image.copyTo(roi);
 
     cv::imshow("Cam output", debug_img_videoframe); // put the image on screen
   }
