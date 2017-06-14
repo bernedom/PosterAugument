@@ -25,17 +25,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-OPENCV_PATH = "C:/Code/opencv/opencv/build/"
-OPENCV_LIB_PATH = "$${OPENCV_PATH}/lib/"
-OPENCV_BIN_PATH = "$${OPENCV_PATH}/bin/"
+OPENCV_PATH = "C:/Code/opencv/opencv/build/install"
+OPENCV_LIB_PATH = "$${OPENCV_PATH}/x64/vc14/lib/"
+OPENCV_BIN_PATH = "$${OPENCV_PATH}/x64/vc14/bin/"
 OPENCV_INCLUDE_PATH = "$${OPENCV_PATH}/include/"
 
 INCLUDEPATH += $${OPENCV_INCLUDE_PATH}
 
 
-
 debug {
-    LIBS += -L$${OPENCV_LIB_PATH}/debug \
+    LIBS += -L$${OPENCV_LIB_PATH} \
     -lopencv_core320d \
     -lopencv_xfeatures2d320d \
     -lopencv_features2d320d \
@@ -52,7 +51,7 @@ debug {
 }
 
 release {
-LIBS += -L$${OPENCV_LIB_PATH}/release \
+LIBS += -L$${OPENCV_LIB_PATH} \
     -lopencv_core320 \
     -lopencv_xfeatures2d320 \
     -lopencv_features2d320 \
