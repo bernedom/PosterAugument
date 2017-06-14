@@ -169,13 +169,11 @@ int main(int, char **) {
         auto &video_px = video_frame.raw_data.at<cv::Vec3b>(r, c);
         const auto &overlay_px = distorted_image.at<cv::Vec4b>(r, c);
 
+        float alpha = overlay_px[3] / 255.0f;
         // blend using alpha weight
-        video_px[0] =
-            video_px[0] * (255 - overlay_px[3]) + overlay_px[0] * overlay_px[3];
-        video_px[1] =
-            video_px[1] * (255 - overlay_px[3]) + overlay_px[1] * overlay_px[3];
-        video_px[2] =
-            video_px[2] * (255 - overlay_px[3]) + overlay_px[2] * overlay_px[3];
+        video_px[0] = video_px[0] * (1.0f - alpha) + overlay_px[0] * alpha;
+        video_px[1] = video_px[1] * (1.0f - alpha) + overlay_px[1] * alpha;
+        video_px[2] = video_px[2] * (1.0f - alpha) + overlay_px[2] * alpha;
       }
     }
 
