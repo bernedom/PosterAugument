@@ -77,5 +77,6 @@ HEADERS += \
     surf_image.h \
     featurematcher.h \
     augumentor_cpu.h \
-    augumentor.h
+    augumentor.h \
+    profiling.h
 

@@ -6,9 +6,13 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
 
+#include <Brofiler.h>
+
 #include <iostream>
 
 bool Augumentor_CPU::init() {
+
+  BROFILER_CATEGORY("Augumentor::INIT", Profiler::Color::DarkGreen)
   _source_image.corners = {cv::Point2f(0, 0),
                            cv::Point2f((float)_source_image.raw_data.cols, 0),
                            cv::Point2f((float)_source_image.raw_data.cols,
@@ -29,7 +33,10 @@ bool Augumentor_CPU::init() {
 }
 
 void Augumentor_CPU::compute(SURF_Image &video_frame) {
+  BROFILER_CATEGORY("Augumentor::Compute", Profiler::Color::DarkRed)
+
   _error_msg.clear();
+  BROFILER_EVENT("Compute Surf")
   compute_surf(video_frame);
   // this happens if a featureless frame is recorded, i.e. from overexposure
   // or a blocked camera
@@ -37,11 +44,13 @@ void Augumentor_CPU::compute(SURF_Image &video_frame) {
     _error_msg = "Not enough features to perform matching, skipping frame";
     return;
   }
+  BROFILER_EVENT("Compute matches")
   if (!_matcher.computeMatches(_source_image, video_frame)) {
     _error_msg = "Not enough matching features";
     return;
   }
 
+  BROFILER_EVENT("Find Homography")
   // creating a set of homogenous transforms between points to do pose
   // estimation, limiting the number of RANSAC iterations so it performs a
   // bit faster
@@ -57,6 +66,7 @@ void Augumentor_CPU::compute(SURF_Image &video_frame) {
     return;
   }
 
+  BROFILER_EVENT("Perspective Transform")
   cv::perspectiveTransform(_source_image.corners, video_frame.corners,
                            homography);
 
@@ -78,12 +88,14 @@ void Augumentor_CPU::compute_surf(SURF_Image &image) {
 }
 
 void Augumentor_CPU::render(SURF_Image &video_frame) {
-
+  BROFILER_CATEGORY("Rendering", Profiler::Color::DarkOrange)
   cv::Mat result;
   if (renderdebug()) {
+
     // emulate matching rendeirng if error ms is not empty
     if (!_error_msg.empty()) {
 
+      BROFILER_EVENT("image stitching")
       const auto height =
           std::max(_source_image.raw_data.rows, video_frame.raw_data.rows);
 
@@ -102,6 +114,7 @@ void Augumentor_CPU::render(SURF_Image &video_frame) {
       result.copyTo(video_frame.raw_data);
     } else {
 
+      BROFILER_EVENT("drawing matches");
       cv::Mat debug_image;
       cv::drawMatches(_source_image.raw_data, _source_image.keypoints,
                       video_frame.raw_data, video_frame.keypoints,
@@ -128,6 +141,7 @@ void Augumentor_CPU::render(SURF_Image &video_frame) {
   }
 
   if (!_error_msg.empty()) {
+    BROFILER_EVENT("Putting text")
     cv::putText(video_frame.raw_data, _error_msg,
                 cv::Point(50, video_frame.raw_data.rows - 50),
                 cv::HersheyFonts::FONT_HERSHEY_PLAIN, 1.0,
@@ -139,10 +153,12 @@ void Augumentor_CPU::render(SURF_Image &video_frame) {
 void Augumentor_CPU::warp_replacement_image(SURF_Image &video_frame,
                                             const cv::Mat &homography) {
   // distort replacement image according to homography
+  BROFILER_CATEGORY("Image Manipulation", Profiler::Color::DarkCyan)
 
   cv::Mat distorted_image;
 
   if (animate()) {
+    BROFILER_EVENT("Calculate animation")
     cv::Point2f center((float)_replacement_image.raw_data.cols / 2,
                        (float)_replacement_image.raw_data.rows / 2);
 
@@ -157,6 +173,7 @@ void Augumentor_CPU::warp_replacement_image(SURF_Image &video_frame,
         cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
   } else {
 
+    BROFILER_EVENT("Distorting image")
     cv::warpPerspective(
         _replacement_image.raw_data, distorted_image, homography,
         cv::Size(video_frame.raw_data.cols, video_frame.raw_data.rows));
@@ -165,6 +182,7 @@ void Augumentor_CPU::warp_replacement_image(SURF_Image &video_frame,
   // relies on this
   assert(video_frame.raw_data.size == distorted_image.size);
 
+  BROFILER_EVENT("Color blending")
   for (int c = 0; c < video_frame.raw_data.cols; ++c) {
     for (int r = 0; r < video_frame.raw_data.rows; ++r) {
 
