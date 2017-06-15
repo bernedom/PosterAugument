@@ -1,10 +1,16 @@
 #include "featurematcher.h"
 #include "surf_image.h"
 
+#include <Brofiler.h>
+
 bool FeatureMatcher::computeMatches(SURF_Image &source_image,
                                     SURF_Image &video_frame) {
+
+  BROFILER_CATEGORY("FeatureMatcher::computingMatches",
+                    Profiler::Color::DarkBlue)
   std::vector<cv::DMatch> matches;
   // find matches between the keypoints
+  BROFILER_EVENT("Mattching descriptors")
   _matcher.match(source_image.descriptors, video_frame.descriptors, matches);
 
   // get the min & max distance (max is not
@@ -23,7 +29,7 @@ bool FeatureMatcher::computeMatches(SURF_Image &source_image,
   // this culling using a multiplier is to better find fuzzy matches (having
   // min_dist > 0)
   const double max_distance_multiplier = 3.0;
-
+  BROFILER_EVENT("Culling matches");
   for (const auto &m : matches) {
     if (m.distance < min_distance->distance * max_distance_multiplier) {
       _culled_matches.push_back(m);
