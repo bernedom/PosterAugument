@@ -40,15 +40,14 @@ bool input_handler(Augumentor &augumentor) {
 
 int main(int, char **) {
 
-  BROFILER_FRAME("INIT")
-  BROFILER_CATEGORY("Init Frame", Profiler::Color::AliceBlue);
-  BROFILER_CATEGORY("Opening stream", Profiler::Color::Aqua);
+  BROFILER_CATEGORY("initializing ", Profiler::Color::Aqua);
+  BROFILER_EVENT("Opening webcam");
   cv::VideoCapture stream(0); // no const, because read() is not const
   if (!stream.isOpened()) {
     std::cerr << "Could not open camera\n";
     return -1;
   }
-  BROFILER_CATEGORY("reading images stream", Profiler::Color::Aqua);
+  BROFILER_EVENT("reading images stream");
   SURF_Image source_image;
   source_image.raw_data =
       cv::imread("C:\\Code\\PosterAugument\\Assets\\JollyRoger.jpg");
@@ -61,14 +60,12 @@ int main(int, char **) {
   Augumentor_CPU augumentor(std::move(source_image),
                             std::move(replacement_image));
 
-  BROFILER_CATEGORY("Augumentor Init", Profiler::Color::Aqua);
+  BROFILER_EVENT("Augumentor Init");
   if (!augumentor.init()) {
     return -1;
   }
 
   SURF_Image video_frame;
-
-  cv::Mat debug_img_videoframe;
 
   while (input_handler(augumentor)) {
 
