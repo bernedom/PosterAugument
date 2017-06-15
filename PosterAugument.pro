@@ -30,8 +30,13 @@ OPENCV_LIB_PATH = "$${OPENCV_PATH}/x64/vc14/lib/"
 OPENCV_BIN_PATH = "$${OPENCV_PATH}/x64/vc14/bin/"
 OPENCV_INCLUDE_PATH = "$${OPENCV_PATH}/include/"
 
-INCLUDEPATH += $${OPENCV_INCLUDE_PATH}
+BROFILER_PATH = "C:/Code/Brofiler-1.1.1/"
 
+INCLUDEPATH += $${OPENCV_INCLUDE_PATH} \
+               $${BROFILER_PATH}
+
+LIBS += -L$${BROFILER_PATH} \
+        -lProfilerCore64
 
 debug {
     LIBS += -L$${OPENCV_LIB_PATH} \
@@ -66,6 +71,7 @@ LIBS += -L$${OPENCV_LIB_PATH} \
     OPENCV_BIN_PATH += "Release/"
 
 }
+
 
 HEADERS += \
     surf_image.h \
